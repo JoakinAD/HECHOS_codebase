@@ -15,14 +15,27 @@ from crawlers.Crawler import Crawler
 
 class ElPublico(Crawler):
     SECTION_URLS = (
-        "https://www.infolibre.es/politica/",
-        "https://www.infolibre.es/economia/",
-        "https://www.infolibre.es/igualdad/",
-        "https://www.infolibre.es/internacional/",
-        "https://www.infolibre.es/medioambiente/",
-        "https://www.infolibre.es/union-europea/",
-        "https://www.infolibre.es/investigaciones/",
+        "https://www.publico.es/ultimas-noticias",
+        "https://www.publico.es/sociedad",
+        "https://www.publico.es/politica",
+        "https://www.publico.es/internacional",
+        "https://www.publico.es/economia",
+        "https://www.publico.es/mujer",
+        "https://www.publico.es/mujer/igualdad",
+        "https://www.publico.es/mujer/violencia-machista",
+        "https://www.publico.es/ciencias",
+        "https://www.publico.es/sociedad/m-ambiente",
+        "https://www.publico.es/sociedad/educacion",
+        "https://www.publico.es/sociedad/sanidad",
+        "https://www.publico.es/sociedad/migracion",
+        "https://www.publico.es/politica/gobierno",
+        "https://www.publico.es/politica/partidos",
+        "https://www.publico.es/politica/congreso",
+        "https://www.publico.es/politica/tribunales",
+        "https://www.publico.es/politica/interior",
+        "https://www.publico.es/politica/memoria-publica",
     )
+
 
     def __init__(self, url: str):
         super().__init__(url)
@@ -257,7 +270,7 @@ class ElPublico(Crawler):
                     typ = typ[0] if typ else None
 
                 if typ in ("NewsArticle", "Article", "ReportageNewsArticle"):
-                    dt = obj.get("dateModified") or obj.get("datePublished")
+                    dt = obj.get("datePublished")
                     if isinstance(dt, str) and dt.strip():
                         iso = self._normalize_dt(dt)
                         if iso:
@@ -297,7 +310,7 @@ class ElPublico(Crawler):
     # ---------------------------
     # Main
     # ---------------------------
-    def crawl(self, max_news: int = 300, sleep_s: float = 0.05) -> list[dict]:
+    def crawl(self, max_news: int = 300, sleep_s: float = 0.002) -> list[dict]:
         urls, seen = [], set()
         for sec in self.SECTION_URLS:
             sec_soup = self._get_soup(sec)
@@ -319,7 +332,7 @@ class ElPublico(Crawler):
                 continue
 
             dt_iso = self._extract_date_iso(art_soup, link)
-            if not dt_iso or not self._is_today(dt_iso):
+            if not self._accept_publication_date(dt_iso):
                 continue
 
             headline = self._extract_title(art_soup)
@@ -334,7 +347,7 @@ class ElPublico(Crawler):
                     "headline": headline,
                     "body": body,
                     "link": link,
-                    "date": self._iso_to_ddmmyyyy(dt_iso),  # dd-mm-aaaa
+                    "date": self._format_publication_date(dt_iso),
                     "bias": "N",
                     "newspaper": self.newspaper,
                 }

@@ -247,7 +247,7 @@ class ElPlural(Crawler):
         return d_utc.replace(tzinfo=timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
     def _extract_date_iso(self, soup: BeautifulSoup, link: str) -> str:
-        # 1) JSON-LD datePublished/dateModified
+        # 1) JSON-LD datePublished
         for s in soup.select('script[type="application/ld+json"]'):
             raw = (s.string or "").strip()
             if not raw:
@@ -269,7 +269,7 @@ class ElPlural(Crawler):
                 if isinstance(typ, list):
                     typ = typ[0] if typ else None
                 if typ in ("NewsArticle", "Article", "ReportageNewsArticle"):
-                    dt = obj.get("dateModified") or obj.get("datePublished")
+                    dt = obj.get("datePublished")
                     if isinstance(dt, str) and dt.strip():
                         iso = self._normalize_dt(dt)
                         if iso:
@@ -362,7 +362,7 @@ class ElPlural(Crawler):
                 continue
 
             dt_iso = self._extract_date_iso(soup, link)
-            if not dt_iso or not self._is_today(dt_iso):
+            if not self._accept_publication_date(dt_iso):
                 continue
 
             headline = self._extract_title(soup)
@@ -377,7 +377,7 @@ class ElPlural(Crawler):
                     "headline": headline,
                     "body": body,
                     "link": link,
-                    "date": self._iso_to_ddmmyyyy(dt_iso),  # dd-mm-aaaa
+                    "date": self._format_publication_date(dt_iso),
                     "bias": "N",
                     "newspaper": self.newspaper,
                 }

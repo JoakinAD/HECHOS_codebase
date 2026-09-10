@@ -4,6 +4,7 @@ import requests
 import sys
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from shutil import copy
 from crawlers.ElMundo import ElMundo
@@ -61,6 +62,36 @@ def restore_dataset(safety_directory, dataset_filename):
     print(f"Restored dataset from {latest_safety_copy}")
 
 
+def crawl_in_parallel(crawlers):
+    """Run one independent crawler task for each newspaper."""
+    results = [[] for _ in crawlers]
+    failures = []
+
+    for crawler in crawlers:
+        print(f"Started crawling {crawler.newspaper} at {datetime.now().strftime('%H:%M:%S')}")
+
+    with ThreadPoolExecutor(max_workers=len(crawlers)) as executor:
+        futures = {
+            executor.submit(crawler.crawl): (index, crawler)
+            for index, crawler in enumerate(crawlers)
+        }
+        for future in as_completed(futures):
+            index, crawler = futures[future]
+            try:
+                results[index] = future.result()
+            except Exception as exc:
+                failures.append(crawler.newspaper)
+                print(f"Failed crawling {crawler.newspaper}: {exc}")
+                continue
+            print(
+                f"Finished crawling {crawler.newspaper} at "
+                f"{datetime.now().strftime('%H:%M:%S')} with {len(results[index])} news"
+            )
+
+    print(f"Crawling completed: {len(crawlers) - len(failures)} succeeded, {len(failures)} failed")
+    return results, failures
+
+
 def main(args):
     if len(args) < 2:
         mode = "-h"
@@ -91,11 +122,7 @@ def main(args):
             ElEspanol("https://www.elespanol.com/")
 
         ]
-        # realizamos el scrapping
-        result_data = []
-        for crawler in crawlers:
-            result_data.append(crawler.crawl())
-            print(f"Finished crawling {crawler.newspaper} at {datetime.now().strftime('%H:%M:%S')} with {len(result_data[-1])} news")
+        result_data, _ = crawl_in_parallel(crawlers)
 
 
         if os.path.exists("news_dataset.json"):
@@ -126,13 +153,12 @@ def main(args):
             InfoLibre("https://www.infolibre.es"),
             ElPlural("https://www.elplural.com")   
         ]
+        crawl_results, _ = crawl_in_parallel(crawlers)
         result_data = []
-        for crawler in crawlers:
-            temp_res = crawler.crawl()
+        for temp_res in crawl_results:
             if not temp_res:
                 continue
             result_data.append(temp_res)
-            print(f"Finished crawling {crawler.newspaper} at {datetime.now().strftime('%H:%M:%S')} with {len(result_data[-1])} news")
         with open("news_dataset_debug.json", "w", encoding="utf-8") as f:
             json.dump(result_data, f, ensure_ascii=False, indent=2)
         manage_debug_files("debug", "news_dataset_debug.json")

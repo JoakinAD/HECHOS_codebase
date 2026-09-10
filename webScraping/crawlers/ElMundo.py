@@ -32,7 +32,7 @@ class ElMundo(Crawler):
     )
 
     ARTICLE_RE = re.compile(r"/\d{4}/\d{2}/\d{2}/[0-9a-f]{24}\.html$", re.I)
-    DENY = ("/opinion/", "/autor/", "/autores/", "/suscripcion", "/newsletter", "/tags/", "/tag/, #ancla_comentarios")
+    DENY = ("/opinion/", "/yodona/", "/autor/", "/autores/", "/suscripcion", "/newsletter", "/tags/", "/tag/, #ancla_comentarios")
 
     def __init__(self, url: str):
         super().__init__(url)
@@ -149,58 +149,6 @@ class ElMundo(Crawler):
 
         return self._clean("\n\n".join(parts))
 
-    def _date_ddmmyyyy_if_today(self, soup: BeautifulSoup) -> str:
-        """
-        Devuelve dd-mm-aaaa si el artículo es de HOY (UTC). Si no, "".
-        Fuente: JSON-LD (dateModified/datePublished) o <time datetime="...">
-        """
-        dt_str = ""
-
-        # JSON-LD
-        for s in soup.select('script[type="application/ld+json"]'):
-            raw = (s.string or "").strip()
-            if not raw:
-                continue
-            try:
-                data = json.loads(raw)
-            except Exception:
-                continue
-            objs = data if isinstance(data, list) else [data]
-            for o in list(objs):
-                if isinstance(o, dict) and isinstance(o.get("@graph"), list):
-                    objs.extend([x for x in o["@graph"] if isinstance(x, dict)])
-            for o in objs:
-                if isinstance(o, dict) and (o.get("@type") in ("NewsArticle", "Article", "ReportageNewsArticle")):
-                    dt_str = (o.get("dateModified") or o.get("datePublished") or "").strip()
-                    if dt_str:
-                        break
-            if dt_str:
-                break
-
-        # DOM fallback
-        if not dt_str:
-            t = soup.select_one("time[datetime]")
-            dt_str = (t.get("datetime", "").strip() if t else "")
-
-        if not dt_str:
-            return ""
-
-        # parse ISO
-        if isinstance(dt_str, list):
-            dt_str = dt_str[0] if dt_str else ""
-        try:
-            dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        except Exception:
-            return ""
-
-        if dt.tzinfo is None:
-            # si viniera naive, no nos fiamos para filtrar "hoy"
-            return ""
-
-        today_utc = datetime.now().date() - timedelta(days = 1)
-        dt_utc = dt.astimezone(timezone.utc)
-        return dt_utc.strftime("%d-%m-%Y") if dt_utc.date() == today_utc else ""
-
     def crawl(self, max_news: int = 300, sleep_s: float = 0.05) -> list[dict]:
         urls, seen = [], set()
         for sec in self.SECTION_URLS:
@@ -219,8 +167,8 @@ class ElMundo(Crawler):
             if not s:
                 continue
 
-            date = self._date_ddmmyyyy_if_today(s)
-            if not date:
+            dt_iso = self._extract_publication_date_iso(s)
+            if not self._accept_publication_date(dt_iso):
                 continue
 
             title = self._title(s)
@@ -233,7 +181,7 @@ class ElMundo(Crawler):
                 "headline": title,
                 "body": body,
                 "link": link,
-                "date": date,
+                "date": self._format_publication_date(dt_iso),
                 "bias": "N",
                 "newspaper": self.newspaper,
             })

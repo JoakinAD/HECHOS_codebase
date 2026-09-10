@@ -16,11 +16,33 @@ from crawlers.Crawler import Crawler
 
 class LaRazon(Crawler):
     SECTION_URLS = (
+        "https://www.larazon.es/ultimas-noticias/",
         "https://www.larazon.es/espana/",
         "https://www.larazon.es/internacional/",
         "https://www.larazon.es/economia/",
         "https://www.larazon.es/sociedad/",
+        "https://www.larazon.es/actualidad/",
+        "https://www.larazon.es/elecciones/",
+        "https://www.larazon.es/espana/defensa/",
+        "https://www.larazon.es/educacion/",
+        "https://www.larazon.es/medio-ambiente/",
+        "https://www.larazon.es/salud/",
+        "https://www.larazon.es/ciencia/",
+        "https://www.larazon.es/tecnologia/",
+        "https://www.larazon.es/madrid/",
+        "https://www.larazon.es/cataluna/",
+        "https://www.larazon.es/comunidad-valenciana/",
+        "https://www.larazon.es/andalucia/",
+        "https://www.larazon.es/castilla-y-leon/",
+        "https://www.larazon.es/castilla-la-mancha/",
+        "https://www.larazon.es/murcia/",
+        "https://www.larazon.es/galicia/",
+        "https://www.larazon.es/aragon/",
+        "https://www.larazon.es/extremadura/",
+        "https://www.larazon.es/canarias/",
+        "https://www.larazon.es/pais-vasco/",
     )
+
 
     # Ej real:
     # https://www.larazon.es/espana/..._2026020469837c622f00a04688f78f3c.html
@@ -279,7 +301,7 @@ class LaRazon(Crawler):
                 if isinstance(typ, list):
                     typ = typ[0] if typ else None
                 if typ in ("NewsArticle", "Article", "ReportageNewsArticle"):
-                    dt = obj.get("dateModified") or obj.get("datePublished")
+                    dt = obj.get("datePublished")
                     if isinstance(dt, str) and dt.strip():
                         iso = self._normalize_dt(dt)
                         if iso:
@@ -355,7 +377,7 @@ class LaRazon(Crawler):
                 continue
 
             dt_iso = self._extract_date_iso(soup, link)
-            if not dt_iso or not self._is_today(dt_iso):
+            if not self._accept_publication_date(dt_iso):
                 continue
 
             headline = self._extract_title(soup)
@@ -376,7 +398,7 @@ class LaRazon(Crawler):
                     "headline": headline,
                     "body": body,
                     "link": link,
-                    "date": self._iso_to_ddmmyyyy(dt_iso),  # dd-mm-aaaa
+                    "date": self._format_publication_date(dt_iso),
                     "bias": "N",
                     "newspaper": self.newspaper,
                 }

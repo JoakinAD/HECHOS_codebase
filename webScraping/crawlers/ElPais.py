@@ -112,9 +112,9 @@ class ElPais(Crawler):
             return ""
         return f"{d}-{mo}-{y}" if dt == datetime.now().date() - timedelta(days = 1) else ""
 
-    def _section_links_today(self, soup: BeautifulSoup) -> list[tuple[str, str]]:
+    def _section_links_today(self, soup: BeautifulSoup) -> list[str]:
         """
-        Devuelve lista de (url, fecha_dd-mm-aaaa) SOLO de HOY.
+        Devuelve URLs de artículos; la fecha se valida en la página del artículo.
         Además evita:
           - bloques branded/patrocinados (sociedad)
           - bloque Opinión incrustado (aunque no lleve /opinion/)
@@ -161,13 +161,9 @@ class ElPais(Crawler):
             if u in opinion_urls:
                 continue
 
-            fecha = self._date_ddmmyyyy_if_today_from_url(u)
-            if not fecha:
-                continue
-
             if u not in seen:
                 seen.add(u)
-                out.append((u, fecha))
+                out.append(u)
 
         return out
 
@@ -229,26 +225,30 @@ class ElPais(Crawler):
         return self._clean("\n\n".join(parts))
 
     def crawl(self, max_news: int = 250, sleep_s: float = 0.05) -> list[dict]:
-        # 1) links SOLO de HOY desde secciones
+        # 1) links desde secciones; la URL no sustituye la fecha publicada.
         pairs, seen = [], set()
         for sec in self.SECTION_URLS:
             s = self._soup(sec)
             if not s:
                 continue
-            for u, fecha in self._section_links_today(s):
+            for u in self._section_links_today(s):
                 if u not in seen:
                     seen.add(u)
-                    pairs.append((u, fecha))
+                    pairs.append(u)
 
         if not pairs:
             return []
 
         # 2) scrap de cada artículo
         data = []
-        for link, fecha in pairs[:max_news]:
+        for link in pairs[:max_news]:
             time.sleep(sleep_s)
             soup = self._soup(link)
             if not soup:
+                continue
+
+            dt_iso = self._extract_publication_date_iso(soup)
+            if not self._accept_publication_date(dt_iso):
                 continue
 
             headline = self._title(soup)
@@ -262,7 +262,7 @@ class ElPais(Crawler):
                 "headline": headline,
                 "body": body,
                 "link": link,
-                "date": fecha,     # dd-mm-aaaa (solo HOY)
+                "date": self._format_publication_date(dt_iso),
                 "bias": "N",
                 "newspaper": self.newspaper,
             })
