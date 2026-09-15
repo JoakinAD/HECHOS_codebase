@@ -1,0 +1,17 @@
+{
+  "representation": "hybrid_distance",
+  "clusterer": "hac",
+  "encoder": "distiluse_multilingual",
+  "metrics": {
+    "ami": 0.8611501282458929,
+    "ari": 0.7200573307954103,
+    "bcubed_precision": 0.9804259125995374,
+    "bcubed_recall": 0.683110952454146,
+    "bcubed_f1": 0.8051996839216212,
+    "gold_clusters": 416,
+    "predicted_clusters": 1020,
+    "predicted_singletons": 421,
+    "predicted_singleton_percentage": 41.27450980392157,
+    "documents": 4527
+  }
+}

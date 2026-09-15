@@ -1,0 +1,8 @@
+numpy
+scipy
+scikit-learn
+sentence-transformers
+hdbscan
+spacy
+pyvis
+pytest
