@@ -1,0 +1,21 @@
+{
+  "representation": "hybrid_distance",
+  "clusterer": "hdbscan",
+  "encoder": "distiluse_multilingual",
+  "metrics": {
+    "ami": 0.607327719907915,
+    "ari": 0.3189236410873624,
+    "bcubed_precision": 0.994460398105196,
+    "bcubed_recall": 0.40085122649824956,
+    "bcubed_f1": 0.5713858657168404,
+    "gold_clusters": 416,
+    "predicted_clusters": 1940,
+    "predicted_singletons": 983,
+    "predicted_singleton_percentage": 50.670103092783506,
+    "documents_in_singleton_clusters": 983,
+    "documents_in_singleton_clusters_percentage": 21.71415948751933,
+    "raw_noise_points": 983,
+    "raw_noise_percentage": 21.71415948751933,
+    "documents": 4527
+  }
+}

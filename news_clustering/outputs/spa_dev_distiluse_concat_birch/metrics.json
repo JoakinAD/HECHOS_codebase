@@ -1,0 +1,21 @@
+{
+  "representation": "concat_features",
+  "clusterer": "birch",
+  "encoder": "distiluse_multilingual",
+  "metrics": {
+    "ami": 0.8752446401178624,
+    "ari": 0.8004583597607637,
+    "bcubed_precision": 0.8205962946431872,
+    "bcubed_recall": 0.8283283425159227,
+    "bcubed_f1": 0.8244441902300357,
+    "gold_clusters": 416,
+    "predicted_clusters": 630,
+    "predicted_singletons": 235,
+    "predicted_singleton_percentage": 37.301587301587304,
+    "documents_in_singleton_clusters": 235,
+    "documents_in_singleton_clusters_percentage": 5.191075767616523,
+    "raw_noise_points": null,
+    "raw_noise_percentage": null,
+    "documents": 4527
+  }
+}

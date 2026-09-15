@@ -204,25 +204,35 @@ def bcubed(gold: list[str], predicted: list[str]) -> tuple[float, float, float]:
     return precision, recall, f1
 
 
-def evaluate(documents: list[Document], labels: list[str]) -> dict[str, Any] | None:
+def evaluate(documents: list[Document], labels: list[str], raw_labels: np.ndarray | None = None) -> dict[str, Any] | None:
     if any(document.gold_cluster is None for document in documents):
         return None
     gold = [document.gold_cluster for document in documents]
     precision, recall, f1 = bcubed(gold, labels)
     sizes = Counter(labels)
     singleton_count = sum(size == 1 for size in sizes.values())
+    singleton_documents = sum(size for size in sizes.values() if size == 1)
+    raw_noise_points = None if raw_labels is None else int(np.count_nonzero(raw_labels == -1))
     return {"ami": float(adjusted_mutual_info_score(gold, labels)), "ari": float(adjusted_rand_score(gold, labels)),
         "bcubed_precision": precision, "bcubed_recall": recall, "bcubed_f1": f1,
         "gold_clusters": len(set(gold)), "predicted_clusters": len(sizes), "predicted_singletons": singleton_count,
-        "predicted_singleton_percentage": 100.0 * singleton_count / len(sizes), "documents": len(documents)}
+        "predicted_singleton_percentage": 100.0 * singleton_count / len(sizes),
+        "documents_in_singleton_clusters": singleton_documents,
+        "documents_in_singleton_clusters_percentage": 100.0 * singleton_documents / len(documents),
+        "raw_noise_points": raw_noise_points,
+        "raw_noise_percentage": None if raw_noise_points is None else 100.0 * raw_noise_points / len(documents),
+        "documents": len(documents)}
 
 
-def cluster_entities(documents: list[Document]) -> list[str]:
+def load_spanish_ner() -> Any:
     try:
         import spacy
-        nlp = spacy.load("es_core_news_md")
+        return spacy.load("es_core_news_md")
     except OSError as error:
         raise RuntimeError("Install Spanish NER with: python -m spacy download es_core_news_md") from error
+
+
+def cluster_entities(documents: list[Document], nlp: Any) -> list[str]:
     counts: Counter[str] = Counter()
     for document in documents:
         counts.update({entity.text.strip().lower() for entity in nlp(document.content).ents if entity.text.strip()})
@@ -232,10 +242,11 @@ def cluster_entities(documents: list[Document]) -> list[str]:
 def write_outputs(output: Path, config: dict[str, Any], documents: list[Document], labels: list[str], metrics: dict[str, Any] | None) -> None:
     grouped: dict[str, list[Document]] = defaultdict(list)
     for document, label in zip(documents, labels): grouped[label].append(document)
+    nlp = load_spanish_ner()
     summaries: dict[str, dict[str, Any]] = {}
     for label, members in grouped.items():
         members.sort(key=lambda item: (item.date, item.id))
-        entities = cluster_entities(members)
+        entities = cluster_entities(members, nlp)
         summaries[label] = {"members": members, "entities": entities}
     with (output / "clusters.txt").open("w", encoding="utf-8") as handle:
         for label in sorted(grouped, key=lambda item: (grouped[item][0].date, item)):
@@ -301,8 +312,10 @@ def main() -> None:
     else:
         data = concat_features(semantic, tfidf, documents, config["weights"], config["temporal"]["sigma_days"])
         print(f"Feature matrix shape: {data.shape}; sparse: {sparse.issparse(data)}")
-    print("Clustering..."); labels = normalize_noise_labels(route_clusterer(config["representation"], config["clusterer"], data))
-    print("Evaluation..."); metrics = evaluate(documents, labels)
+    print("Clustering..."); raw_labels = route_clusterer(config["representation"], config["clusterer"], data)
+    labels = normalize_noise_labels(raw_labels)
+    raw_for_diagnostics = raw_labels if config["clusterer"]["name"] == "hdbscan" else None
+    print("Evaluation..."); metrics = evaluate(documents, labels, raw_for_diagnostics)
     if metrics: print(json.dumps(metrics, indent=2))
     output.mkdir(parents=True)
     print("Output generation..."); write_outputs(output, config, documents, labels, metrics)

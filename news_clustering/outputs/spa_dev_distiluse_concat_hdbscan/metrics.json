@@ -1,0 +1,21 @@
+{
+  "representation": "concat_features",
+  "clusterer": "hdbscan",
+  "encoder": "distiluse_multilingual",
+  "metrics": {
+    "ami": 0.6522608785691413,
+    "ari": 0.3832283412188325,
+    "bcubed_precision": 0.9888396253870079,
+    "bcubed_recall": 0.4542806093635556,
+    "bcubed_f1": 0.6225547348953692,
+    "gold_clusters": 416,
+    "predicted_clusters": 1762,
+    "predicted_singletons": 853,
+    "predicted_singleton_percentage": 48.41089670828604,
+    "documents_in_singleton_clusters": 853,
+    "documents_in_singleton_clusters_percentage": 18.842500552242104,
+    "raw_noise_points": 853,
+    "raw_noise_percentage": 18.842500552242104,
+    "documents": 4527
+  }
+}
