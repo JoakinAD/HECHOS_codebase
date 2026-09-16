@@ -5,4 +5,5 @@ sentence-transformers
 hdbscan
 spacy
 pyvis
+matplotlib
 pytest
