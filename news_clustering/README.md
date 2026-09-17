@@ -39,6 +39,8 @@ Experiment B is `X_concat -> HDBSCAN vs BIRCH`. It requires `mu_days == 0` and c
 
 HDBSCAN (Euclidean) and BIRCH (`n_clusters=None`) receive the same sparse CSR matrix. Its squared Euclidean difference is `ws*D_semantic + wl*D_tfidf + wt*delta_days^2/(2*sigma^2)`. This is intentionally not the bounded Gaussian temporal distance in Experiment A, so `X_concat` is not mathematically equivalent to `D_hybrid`. Cross-representation HAC-vs-BIRCH results are not a pure algorithm-only comparison.
 
+When representation hyperparameters are tuned separately per pipeline, their winners are optimized-pipeline comparisons, not pure algorithm-only comparisons. Controlled clusterer comparisons remain available only for rows sharing the same representation ID: `D_hybrid -> HAC vs HDBSCAN` or `X_concat -> HDBSCAN vs BIRCH`.
+
 Kömeçoğlu & Yilmaz compare BIRCH and HDBSCAN on a common Node2Vec-derived event vector. This implementation follows the same controlled-comparison principle but uses a different common vector representation: weighted concatenation of normalized Sentence-Transformer, TF-IDF, and temporal features. It is therefore not a reproduction of their event-graph representation.
 
 ## Evaluation and outputs

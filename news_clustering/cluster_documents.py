@@ -1,3 +1,4 @@
+#news_clustering/cluster_documents.py
 """Configurable news-story clustering experiments.
 
 Experiment A uses a hybrid pairwise distance; Experiment B uses concatenated
