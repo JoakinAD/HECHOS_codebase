@@ -41,6 +41,8 @@ HDBSCAN (Euclidean) and BIRCH (`n_clusters=None`) receive the same sparse CSR ma
 
 When representation hyperparameters are tuned separately per pipeline, their winners are optimized-pipeline comparisons, not pure algorithm-only comparisons. Controlled clusterer comparisons remain available only for rows sharing the same representation ID: `D_hybrid -> HAC vs HDBSCAN` or `X_concat -> HDBSCAN vs BIRCH`.
 
+Local representation grids, sigma ranges, and refinement boundaries are project-specific development choices. They do not reproduce paper-reported optima; the source-backed principles are weighted distance fusion for Experiment A and same-vector controlled comparisons for Experiment B.
+
 Kömeçoğlu & Yilmaz compare BIRCH and HDBSCAN on a common Node2Vec-derived event vector. This implementation follows the same controlled-comparison principle but uses a different common vector representation: weighted concatenation of normalized Sentence-Transformer, TF-IDF, and temporal features. It is therefore not a reproduction of their event-graph representation.
 
 ## Evaluation and outputs
